@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.IO;
 using Stashie.Classes;
+using ExileCore2.PoEMemory.Elements;
+using ExileCore2.PoEMemory.Elements.InventoryElements;
 using static ExileCore2.PoEMemory.MemoryObjects.ServerInventory;
 
 namespace Stashie.Compartments;
@@ -51,6 +53,23 @@ internal class Utility
     {
         var inventPosX = inventItem.PosX;
         var inventPosY = inventItem.PosY;
+
+        if (inventPosX < 0 || inventPosX >= containerSize.Width)
+            return true;
+
+        if (inventPosY < 0 || inventPosY >= containerSize.Height)
+            return true;
+
+        return ignoredCells[inventPosY, inventPosX] != 0; //No need to check all item size
+    }
+
+    public static bool CheckIgnoreCells(NormalInventoryItem inventItem, (int Width, int Height) containerSize,
+        int[,] ignoredCells)
+    {
+        // var inventPosX = (int)inventItem.X;
+        // var inventPosY = (int)inventItem.Y;
+        var inventPosX = (int)(inventItem.X / inventItem.Height);
+        var inventPosY = (int)(inventItem.Y / inventItem.Height);
 
         if (inventPosX < 0 || inventPosX >= containerSize.Width)
             return true;

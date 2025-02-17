@@ -30,7 +30,7 @@ public class StashieCore : BaseSettingsPlugin<StashieSettings>
 
     public StashieCore()
     {
-        Name = "Stashie With Linq";
+        Name = "NK Stashie";
     }
 
     public override bool Initialise()

@@ -24,8 +24,10 @@ public class StashieSettingsHandler
         try
         {
             // Player Inventory
-            var inventory_server =
-                Main.GameController.IngameState.Data.ServerData.PlayerInventories[(int)InventorySlotE.MainInventory1];
+            // var inventory_server =
+            //     Main.GameController.IngameState.Data.ServerData.PlayerInventories[(int)InventorySlotE.MainInventory1];
+            var inventory_server = Main.GameController.Game.IngameState.IngameUi.InventoryPanel[InventoryIndex.PlayerInventory];
+            // var invItems = panel[InventoryIndex.PlayerInventory].VisibleInventoryItems;
             UpdateIgnoredCells(inventory_server, Main.Settings.IgnoredCells);
         }
         catch (Exception e)
@@ -34,18 +36,20 @@ public class StashieSettingsHandler
         }
     }
 
-    private static void UpdateIgnoredCells(InventoryHolder server_items, int[,] ignoredCells)
+    private static void UpdateIgnoredCells(Inventory server_items, int[,] ignoredCells)
     {
-        foreach (var item in server_items.Inventory.InventorySlotItems)
+        foreach (var item in server_items.VisibleInventoryItems)
         {
             var baseC = item.Item.GetComponent<Base>();
+            if (baseC == null) continue;
             var itemSizeX = baseC.ItemCellsSizeX;
             var itemSizeY = baseC.ItemCellsSizeY;
-            var inventPosX = item.PosX;
-            var inventPosY = item.PosY;
+            var inventPosX = (int)(item.X / item.Height);
+            var inventPosY = (int)(item.Y / item.Height);
+            // DebugWindow.LogError($"Checking slot X {inventPosX}, Y {inventPosY}, itemSizeX {itemSizeX}, itemSizeY {itemSizeY}");
             for (var y = 0; y < itemSizeY; y++)
-            for (var x = 0; x < itemSizeX; x++)
-                ignoredCells[y + inventPosY, x + inventPosX] = 1;
+                for (var x = 0; x < itemSizeX; x++)
+                    ignoredCells[y + inventPosY, x + inventPosX] = 1;
         }
     }
 
@@ -171,32 +175,32 @@ public class StashieSettingsHandler
 
         var numb = 1;
         for (var i = 0; i < 5; i++)
-        for (var j = 0; j < 4; j++)
-        {
-            var toggled = Convert.ToBoolean(Main.Settings.IgnoredExpandedCells[i, j]);
-            if (ImGui.Checkbox($"##{numb}IgnoredBackpackInventoryCells", ref toggled))
-                Main.Settings.IgnoredExpandedCells[i, j] ^= 1;
+            for (var j = 0; j < 4; j++)
+            {
+                var toggled = Convert.ToBoolean(Main.Settings.IgnoredExpandedCells[i, j]);
+                if (ImGui.Checkbox($"##{numb}IgnoredBackpackInventoryCells", ref toggled))
+                    Main.Settings.IgnoredExpandedCells[i, j] ^= 1;
 
-            if ((numb - 1) % 4 < 3)
-                ImGui.SameLine();
+                if ((numb - 1) % 4 < 3)
+                    ImGui.SameLine();
 
-            numb += 1;
-        }
+                numb += 1;
+            }
 
         ImGui.NextColumn();
         numb = 1;
         for (var i = 0; i < 5; i++)
-        for (var j = 0; j < 12; j++)
-        {
-            var toggled = Convert.ToBoolean(Main.Settings.IgnoredCells[i, j]);
-            if (ImGui.Checkbox($"##{numb}IgnoredMainInventoryCells", ref toggled))
-                Main.Settings.IgnoredCells[i, j] ^= 1;
+            for (var j = 0; j < 12; j++)
+            {
+                var toggled = Convert.ToBoolean(Main.Settings.IgnoredCells[i, j]);
+                if (ImGui.Checkbox($"##{numb}IgnoredMainInventoryCells", ref toggled))
+                    Main.Settings.IgnoredCells[i, j] ^= 1;
 
-            if ((numb - 1) % 12 < 11)
-                ImGui.SameLine();
+                if ((numb - 1) % 12 < 11)
+                    ImGui.SameLine();
 
-            numb += 1;
-        }
+                numb += 1;
+            }
 
         // Settings to 0 breaks normal settings draws, core has 1 column for sliders?
         ImGui.Columns(1);

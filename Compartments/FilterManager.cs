@@ -5,6 +5,8 @@ using System.Linq;
 using System.Threading;
 using ExileCore2;
 using ExileCore2.Shared;
+using ExileCore2.Shared.Enums;
+using ExileCore2.PoEMemory.Components;
 using ItemFilterLibrary;
 using Stashie.Classes;
 using static Stashie.StashieCore;
@@ -39,19 +41,19 @@ internal class FilterManager
                 Main.currentFilter = FilterFileHandler.Load($"{Main.Settings.FilterFile.Value}.json", filterFilePath);
 
                 foreach (var customFilter in Main.currentFilter)
-                foreach (var filter in customFilter.Filters)
-                {
-                    if (!Main.Settings.CustomFilterOptions.TryGetValue(customFilter.ParentMenuName + filter.FilterName,
-                            out var indexNodeS))
+                    foreach (var filter in customFilter.Filters)
                     {
-                        indexNodeS = new ListIndexNode { Value = "Ignore", Index = -1 };
-                        Main.Settings.CustomFilterOptions.Add(customFilter.ParentMenuName + filter.FilterName,
-                            indexNodeS);
-                    }
+                        if (!Main.Settings.CustomFilterOptions.TryGetValue(customFilter.ParentMenuName + filter.FilterName,
+                                out var indexNodeS))
+                        {
+                            indexNodeS = new ListIndexNode { Value = "Ignore", Index = -1 };
+                            Main.Settings.CustomFilterOptions.Add(customFilter.ParentMenuName + filter.FilterName,
+                                indexNodeS);
+                        }
 
-                    filter.StashIndexNode = indexNodeS;
-                    Main.SettingsListNodes.Add(indexNodeS);
-                }
+                        filter.StashIndexNode = indexNodeS;
+                        Main.SettingsListNodes.Add(indexNodeS);
+                    }
             }
             else
             {
@@ -64,27 +66,29 @@ internal class FilterManager
     public static FilterResult CheckFilters(ItemData itemData, Vector2N clickPos)
     {
         foreach (var filter in Main.currentFilter)
-        foreach (var subFilter in filter.Filters)
-            try
-            {
-                if (!subFilter.AllowProcess)
-                    continue;
+            foreach (var subFilter in filter.Filters)
+                try
+                {
+                    if (!subFilter.AllowProcess)
+                        continue;
 
-                if (filter.CompareItem(itemData, subFilter.CompiledQuery))
-                    return new FilterResult(subFilter, itemData, clickPos);
-            }
-            catch (Exception ex)
-            {
-                DebugWindow.LogError($"Check filters error: {ex}");
-            }
+                    if (filter.CompareItem(itemData, subFilter.CompiledQuery))
+                        return new FilterResult(subFilter, itemData, clickPos);
+                }
+                catch (Exception ex)
+                {
+                    DebugWindow.LogError($"Check filters error: {ex}");
+                }
 
         return null;
     }
 
     public static async SyncTask<bool> ParseItems()
     {
-        var _serverData = Main.GameController.Game.IngameState.Data.ServerData;
-        var invItems = _serverData.PlayerInventories[0].Inventory.InventorySlotItems;
+        var panel = Main.GameController.Game.IngameState.IngameUi.InventoryPanel;
+        var invItems = panel[InventoryIndex.PlayerInventory].VisibleInventoryItems;
+        // var _serverData = Main.GameController.Game.IngameState.Data.ServerData;
+        // var invItems = _serverData.PlayerInventories[0].Inventory.InventorySlotItems;
 
         await TaskUtils.CheckEveryFrameWithThrow(() => invItems != null, new CancellationTokenSource(500).Token);
         Main.DropItems = [];
@@ -130,14 +134,16 @@ internal class FilterManager
 
     public static List<ItemData> GetInventoryItems()
     {
-        var serverData = Main.GameController.Game.IngameState.Data.ServerData;
-        var invItems = serverData.PlayerInventories[0].Inventory.InventorySlotItems;
+        var panel = Main.GameController.Game.IngameState.IngameUi.InventoryPanel;
+        var invItems = panel[InventoryIndex.PlayerInventory].VisibleInventoryItems;
+        // var serverData = Main.GameController.Game.IngameState.Data.ServerData;
+        // var invItems = serverData.PlayerInventories[0].Inventory.InventorySlotItems;
 
         Main.DropItems = [];
         Main.ClickWindowOffset = Main.GameController.Window.GetWindowRectangle().TopLeft;
 
         return (from invItem in invItems
-            where invItem.Item != null && invItem.Address != 0
-            select new ItemData(invItem.Item, Main.GameController)).ToList();
+                where invItem.Item != null && invItem.Address != 0
+                select new ItemData(invItem.Item, Main.GameController)).ToList();
     }
 }
